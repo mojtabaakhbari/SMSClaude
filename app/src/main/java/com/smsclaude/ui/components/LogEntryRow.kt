@@ -28,8 +28,9 @@ fun LogEntryRow(entry: LogEntry, modifier: Modifier = Modifier) {
 
     val (statusColor, statusLabel) = when (entry.status) {
         LogStatus.FORWARDED -> ElectricTeal to "FORWARDED"
-        LogStatus.SKIPPED -> AmberWarning to "SKIPPED"
-        LogStatus.FAILED -> RedError to "FAILED"
+        LogStatus.REPLIED -> BlueInfo to "REPLIED"
+        LogStatus.RPL_FAILED -> RedError to "REPLY FAILED"
+        LogStatus.FWD_FAILED -> RedError to "FORWARD FAILED"
     }
 
     Box(

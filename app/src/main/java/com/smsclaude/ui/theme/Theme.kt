@@ -23,7 +23,7 @@ private val DarkColorScheme = darkColorScheme(
 )
 
 @Composable
-fun SmsForwarderTheme(content: @Composable () -> Unit) {
+fun SmsClaudeTheme(content: @Composable () -> Unit) {
     MaterialTheme(
         colorScheme = DarkColorScheme,
         typography = AppTypography,

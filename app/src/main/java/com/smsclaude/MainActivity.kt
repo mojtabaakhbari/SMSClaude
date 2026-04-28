@@ -22,9 +22,10 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.lifecycle.repeatOnLifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -57,7 +58,7 @@ class MainActivity : ComponentActivity() {
         permissionManager = PermissionManager(this)
         enableEdgeToEdge()
         setContent {
-            SmsForwarderTheme {
+            SmsClaudeTheme {
                 MainApp(activity = this)
             }
         }
@@ -98,34 +99,63 @@ fun MainApp(activity: MainActivity) {
     val dashboardViewModel: DashboardViewModel = viewModel()
     val dashboardState by dashboardViewModel.uiState.collectAsState()
 
-
-    var permCheckTick by remember { mutableIntStateOf(0) }
-    val lifecycle = LocalLifecycleOwner.current.lifecycle
-    LaunchedEffect(lifecycle) {
-        lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
-            permCheckTick++
-        }
+    var allPermsGranted by remember {
+        mutableStateOf(permissionManager.allPermissionsGranted())
     }
-
-    val allPermsGranted by remember(permCheckTick) {
-        derivedStateOf { permissionManager.allPermissionsGranted() }
-    }
-    val batteryOk by remember(permCheckTick) {
-        derivedStateOf { permissionManager.isBatteryOptimizationDisabled() }
+    var batteryOk by remember {
+        mutableStateOf(permissionManager.isBatteryOptimizationDisabled())
     }
 
     val showPermissionDialog = !allPermsGranted
     val showBatteryDialog    = allPermsGranted && !batteryOk
 
+    val lifecycleOwner = LocalLifecycleOwner.current
 
-    LaunchedEffect(permCheckTick) {
-        dashboardViewModel.refreshPermissionState()
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_START || event == Lifecycle.Event.ON_RESUME) {
+                allPermsGranted = permissionManager.allPermissionsGranted()
+                batteryOk = permissionManager.isBatteryOptimizationDisabled()
+                dashboardViewModel.refreshPermissionState()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
     }
 
+    LaunchedEffect(showPermissionDialog, showBatteryDialog) {
+        while (showPermissionDialog || showBatteryDialog) {
+
+            kotlinx.coroutines.delay(200)
+
+
+            val currentPerms = permissionManager.allPermissionsGranted()
+            val currentBattery = permissionManager.isBatteryOptimizationDisabled()
+
+
+            if (currentPerms != allPermsGranted) {
+                allPermsGranted = currentPerms
+            }
+            if (currentBattery != batteryOk) {
+                batteryOk = currentBattery
+            }
+
+            if (currentPerms && currentBattery) {
+                dashboardViewModel.refreshPermissionState()
+            }
+        }
+    }
 
     if (showPermissionDialog) {
         AlertDialog(
-            onDismissRequest = { /* non-dismissible . user must grant */ },
+            onDismissRequest = { },
+            properties = DialogProperties(
+                dismissOnBackPress = false,
+                dismissOnClickOutside = false
+            ),
             title = {
                 Text("Permissions Required", color = OnSurface, fontWeight = FontWeight.Bold)
             },
@@ -133,14 +163,14 @@ fun MainApp(activity: MainActivity) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
                         "SMS Claude needs all of the following permissions. " +
-                        "Without them the forwarding service cannot run.",
+                                "Without them the sending service cannot run.",
                         color    = OnSurfaceMuted,
                         fontSize = 13.sp
                     )
                     Spacer(Modifier.height(4.dp))
                     PermissionItem("RECEIVE_SMS",        "Listen for incoming text messages")
                     PermissionItem("READ_SMS",           "Access SMS content")
-                    PermissionItem("SEND_SMS",           "Forward messages to configured numbers")
+                    PermissionItem("SEND_SMS",           "Sending messages to configured numbers")
                     PermissionItem("POST_NOTIFICATIONS", "Show foreground service notification")
                 }
             },
@@ -166,10 +196,13 @@ fun MainApp(activity: MainActivity) {
         )
     }
 
-   
     if (showBatteryDialog) {
         AlertDialog(
-            onDismissRequest = { /* non-dismissible */ },
+            onDismissRequest = { },
+            properties = DialogProperties(
+                dismissOnBackPress = false,
+                dismissOnClickOutside = false
+            ),
             title = {
                 Text(
                     "Battery Optimization Must Be Disabled",
@@ -179,9 +212,9 @@ fun MainApp(activity: MainActivity) {
             },
             text = {
                 Text(
-                    "To ensure SMS forwarding works reliably in the background, " +
-                    "this app must be excluded from battery optimization. " +
-                    "Without this the OS may kill the service at any time.",
+                    "To ensure SMS sending works reliably in the background, " +
+                            "this app must be excluded from battery optimization. " +
+                            "Without this the OS may kill the service at any time.",
                     color = OnSurfaceMuted
                 )
             },
@@ -202,7 +235,6 @@ fun MainApp(activity: MainActivity) {
         )
     }
 
- 
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
@@ -215,7 +247,6 @@ fun MainApp(activity: MainActivity) {
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
-      
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -235,7 +266,6 @@ fun MainApp(activity: MainActivity) {
                 }
             }
 
-          
             NavigationBar(
                 containerColor = SurfaceCard,
                 tonalElevation = 0.dp,
@@ -287,7 +317,6 @@ fun MainApp(activity: MainActivity) {
             )
         }
 
-    
         ToastHost(
             modifier = Modifier
                 .align(Alignment.BottomCenter)

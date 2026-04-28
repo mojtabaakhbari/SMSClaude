@@ -1,5 +1,17 @@
 package com.smsclaude.ui.screens
 
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.composed
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.platform.LocalFocusManager
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -16,14 +28,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.smsclaude.data.model.ForwardingRule
+import com.smsclaude.data.model.SmsRule
 import com.smsclaude.ui.components.RuleCard
 import com.smsclaude.ui.components.errorTextFieldColors
 import com.smsclaude.ui.components.tealTextFieldColors
@@ -32,13 +43,13 @@ import com.smsclaude.ui.components.ToastType
 import com.smsclaude.ui.theme.*
 import com.smsclaude.viewmodel.RulesViewModel
 
-private val PHONE_REGEX = Regex("""^\+?[0-9\s\-\(\)]{7,15}$""")
+private val PHONE_REGEX = Regex("""^\+?[0-9\s\-\\(\\)]{7,15}$""")
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RulesScreen(viewModel: RulesViewModel = viewModel()) {
     val uiState by viewModel.uiState.collectAsState()
-
+    val count_of_enabled_rules = uiState.enabledRulesCount
     Box(modifier = Modifier.fillMaxSize().background(DeepCharcoal)) {
         LazyColumn(
             modifier = Modifier
@@ -57,18 +68,57 @@ fun RulesScreen(viewModel: RulesViewModel = viewModel()) {
                 ) {
                     Column {
                         Text(
-                            text = "FORWARDING RULES",
+                            text = "SMS RULES",
                             color = ElectricTeal,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 3.sp,
                             fontFamily = FontFamily.Monospace
                         )
-                        Text(
-                            text = "${uiState.rules.size} rules configured",
-                            color = OnSurfaceMuted,
-                            fontSize = 12.sp
-                        )
+                        Spacer(Modifier.height(5.dp))
+                        Row (
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "${uiState.rules.size} rule${if (uiState.rules.size == 1) "" else "s"} configured",
+                                color = OnSurfaceMuted,
+                                fontSize = 9.8.sp,
+                                letterSpacing = 2.sp,
+                                fontFamily = FontFamily.Monospace
+                            )
+                            if (uiState.rules.isNotEmpty()){
+		                        Text(
+		                            text = " -- ",
+		                            color = OnSurfaceMuted,
+		                            fontSize = 9.8.sp,
+		                            letterSpacing = 2.sp,
+		                            fontFamily = FontFamily.Monospace
+		                        )
+		                        
+		                        val enabled = count_of_enabled_rules
+
+		                        val (statusText, statusColor) = when {
+		                            enabled == 0 ->
+		                                "ALL DISABLED" to OnSurfaceMuted
+
+		                            else ->
+		                                "$enabled rule${if (enabled == 1) "" else "s"} enabled" to BlueInfo
+		                        }
+
+		                        Text(
+		                            text = statusText,
+		                            color = statusColor,
+		                            fontSize = 9.8.sp,
+		                            letterSpacing = 2.sp,
+		                            fontFamily = FontFamily.Monospace
+		                        )
+                            }
+                            
+
+
+
+                        }
+
                     }
                     FloatingActionButton(
                         onClick = { viewModel.showAddSheet() },
@@ -96,7 +146,7 @@ fun RulesScreen(viewModel: RulesViewModel = viewModel()) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text("No rules yet", color = OnSurfaceMuted, fontSize = 14.sp)
                             Spacer(Modifier.height(8.dp))
-                            Text("Tap + to create your first forwarding rule", color = OnSurfaceMuted, fontSize = 12.sp)
+                            Text("Tap + to create your first sms rule", color = OnSurfaceMuted, fontSize = 12.sp)
                         }
                     }
                 }
@@ -128,12 +178,30 @@ fun RulesScreen(viewModel: RulesViewModel = viewModel()) {
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
+fun Modifier.scrollOnFocus(): Modifier = composed {
+
+    val bringIntoViewRequester = remember { BringIntoViewRequester() }
+    val coroutineScope = rememberCoroutineScope()
+
+    this
+        .bringIntoViewRequester(bringIntoViewRequester)
+        .onFocusChanged { focusState ->
+            if (focusState.isFocused) {
+                coroutineScope.launch {
+                    delay(150)
+                    bringIntoViewRequester.bringIntoView()
+                }
+            }
+        }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun RuleBottomSheet(
-    editingRule: ForwardingRule?,
+    editingRule: SmsRule?,
     onDismiss: () -> Unit,
-    onSave: (ForwardingRule) -> Unit
+    onSave: (SmsRule) -> Unit
 ) {
     var sourcesText by remember { mutableStateOf(
         editingRule?.sources?.joinToString(", ") ?: ""
@@ -142,6 +210,7 @@ private fun RuleBottomSheet(
         editingRule?.destinations?.joinToString(", ") ?: ""
     ) }
     var keyword by remember { mutableStateOf(editingRule?.keyword ?: "") }
+    var default_text by remember { mutableStateOf(editingRule?.default_text ?: "") }
     var enabled by remember { mutableStateOf(editingRule?.enabled ?: true) }
 
     var destinationTouched by remember { mutableStateOf(false) }
@@ -156,24 +225,31 @@ private fun RuleBottomSheet(
     }
 
     val canSave = destinations.isNotEmpty() && destinationValid
-    val configuration = LocalConfiguration.current
-    val screenHeight = configuration.screenHeightDp.dp
+    val sheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = true
+    )
+
+    val scrollState = rememberScrollState()
+    val focusManager = LocalFocusManager.current
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
+        sheetState = sheetState,
         containerColor = SurfaceCard,
         shape = RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp),
-        modifier = Modifier.heightIn(max = screenHeight * 0.85f)
+        dragHandle = null
     ) {
+
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp)
-                .padding(bottom = 32.dp)
+                .verticalScroll(scrollState)
+                .imePadding()
                 .navigationBarsPadding()
-                .imePadding(),
+                .padding(horizontal = 20.dp, vertical = 24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+
             Text(
                 text = if (editingRule != null) "EDIT RULE" else "NEW RULE",
                 color = ElectricTeal,
@@ -183,19 +259,19 @@ private fun RuleBottomSheet(
                 fontFamily = FontFamily.Monospace
             )
 
-       
             OutlinedTextField(
                 value = sourcesText,
                 onValueChange = { sourcesText = it },
                 label = { Text("Source Numbers (blank = ANY)") },
-                placeholder = { Text("ANY or +1234567890, +9876543210", fontFamily = FontFamily.Monospace) },
-                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text("ANY or +989123456789", fontFamily = FontFamily.Monospace) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .scrollOnFocus(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                 colors = tealTextFieldColors(),
                 shape = RoundedCornerShape(4.dp)
             )
 
-       
             OutlinedTextField(
                 value = destinationsText,
                 onValueChange = {
@@ -206,49 +282,53 @@ private fun RuleBottomSheet(
                 placeholder = { Text("+1234567890", fontFamily = FontFamily.Monospace) },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .onFocusChanged { state ->
-                        if (!state.isFocused && destinationFocused) {
-                            destinationTouched = true
-                        }
-                        destinationFocused = state.isFocused
-                    },
+                    .scrollOnFocus(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                 isError = destinationError != null,
                 supportingText = {
-                    if (destinationError != null) {
-                        Text(destinationError, color = RedError, fontSize = 11.sp)
-                    } else if (destinationValid && destinationsText.isNotBlank()) {
-                        Text("✓ Valid", color = ElectricTeal, fontSize = 11.sp)
+                    when {
+                        destinationError != null ->
+                            Text(destinationError!!, color = RedError, fontSize = 11.sp)
+
+                        destinationValid && destinationsText.isNotBlank() ->
+                            Text("✓ Valid", color = ElectricTeal, fontSize = 11.sp)
                     }
                 },
-                colors = if (destinationError != null) {
-                    errorTextFieldColors()
-                } else if (destinationValid && destinationsText.isNotBlank()) {
-                    tealTextFieldColors()
-                } else {
-                    tealTextFieldColors()
-                },
+                colors = tealTextFieldColors(),
                 shape = RoundedCornerShape(4.dp)
             )
 
-       
             OutlinedTextField(
                 value = keyword,
                 onValueChange = { keyword = it },
                 label = { Text("Keyword Filter (optional)") },
                 placeholder = { Text("OTP, Bank, etc.") },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .scrollOnFocus(),
                 colors = tealTextFieldColors(),
                 shape = RoundedCornerShape(4.dp)
             )
 
-          
+            OutlinedTextField(
+                value = default_text,
+                onValueChange = { default_text = it },
+                label = { Text("Reply Message (optional)") },
+                placeholder = { Text("Hello. I'm busy now, contact me later.") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .scrollOnFocus(),
+                colors = tealTextFieldColors(),
+                shape = RoundedCornerShape(4.dp)
+            )
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text("Enable Rule", color = OnSurface, fontSize = 14.sp)
+
                 Switch(
                     checked = enabled,
                     onCheckedChange = { enabled = it },
@@ -259,34 +339,44 @@ private fun RuleBottomSheet(
                 )
             }
 
-         
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
+
                 OutlinedButton(
-                    onClick = onDismiss,
+                    onClick = {
+                        focusManager.clearFocus()
+                        onDismiss()
+                    },
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(4.dp),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = OnSurfaceMuted),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, BorderColor)
+                    border = BorderStroke(1.dp, BorderColor)
                 ) {
                     Text("Cancel")
                 }
+
                 Button(
                     onClick = {
+
                         if (!canSave) {
                             destinationTouched = true
                             return@Button
                         }
-                        val sources = if (sourcesText.isBlank()) listOf("ANY")
-                        else sourcesText.split(",").map { it.trim() }.filter { it.isNotBlank() }
+
+                        val sources =
+                            if (sourcesText.isBlank()) listOf("ANY")
+                            else sourcesText.split(",")
+                                .map { it.trim() }
+                                .filter { it.isNotBlank() }
 
                         onSave(
-                            ForwardingRule(
+                            SmsRule(
                                 sources = sources,
                                 destinations = destinations,
                                 keyword = keyword.trim(),
+                                default_text = if (default_text.trim().isEmpty()) "" else default_text,
                                 enabled = enabled
                             )
                         )
@@ -294,11 +384,21 @@ private fun RuleBottomSheet(
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(4.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = if (canSave) ElectricTeal else ElectricTeal.copy(alpha = 0.3f),
-                        contentColor = if (canSave) DeepCharcoal else OnSurfaceMuted
+                        containerColor = if (canSave)
+                            ElectricTeal
+                        else
+                            ElectricTeal.copy(alpha = 0.3f),
+
+                        contentColor = if (canSave)
+                            DeepCharcoal
+                        else
+                            OnSurfaceMuted
                     )
                 ) {
-                    Text(if (editingRule != null) "Update" else "Add Rule", fontWeight = FontWeight.Bold)
+                    Text(
+                        if (editingRule != null) "Update" else "Add Rule",
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
         }

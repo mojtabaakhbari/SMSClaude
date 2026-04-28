@@ -3,7 +3,7 @@ package com.smsclaude.viewmodel
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.smsclaude.data.model.ForwardingRule
+import com.smsclaude.data.model.SmsRule
 import com.smsclaude.data.repository.RulesRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -11,10 +11,13 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 data class RulesUiState(
-    val rules: List<ForwardingRule> = emptyList(),
+    val rules: List<SmsRule> = emptyList(),
     val showBottomSheet: Boolean = false,
-    val editingRule: ForwardingRule? = null
-)
+    val editingRule: SmsRule? = null
+) {
+    val enabledRulesCount: Int
+        get() = rules.count { it.enabled }
+}
 
 class RulesViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -38,7 +41,7 @@ class RulesViewModel(application: Application) : AndroidViewModel(application) {
         )
     }
 
-    fun showEditSheet(rule: ForwardingRule) {
+    fun showEditSheet(rule: SmsRule) {
         _uiState.value = _uiState.value.copy(
             showBottomSheet = true,
             editingRule = rule
@@ -52,7 +55,7 @@ class RulesViewModel(application: Application) : AndroidViewModel(application) {
         )
     }
 
-    fun saveRule(rule: ForwardingRule) {
+    fun saveRule(rule: SmsRule) {
         viewModelScope.launch {
             val existing = _uiState.value.editingRule
             if (existing != null) {

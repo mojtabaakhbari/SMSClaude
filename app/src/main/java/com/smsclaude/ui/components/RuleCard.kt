@@ -16,12 +16,12 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.smsclaude.data.model.ForwardingRule
+import com.smsclaude.data.model.SmsRule
 import com.smsclaude.ui.theme.*
 
 @Composable
 fun RuleCard(
-    rule: ForwardingRule,
+    rule: SmsRule,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
     onToggle: (Boolean) -> Unit,
@@ -44,7 +44,7 @@ fun RuleCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 14.dp, end = 12.dp, top = 12.dp, bottom = 12.dp)
+                .padding(start = 14.dp, end = 12.dp, top = 13.3.dp, bottom = 12.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -70,7 +70,7 @@ fun RuleCard(
                             fontFamily = FontFamily.Monospace
                         )
                     }
-                    Spacer(Modifier.height(4.dp))
+                    Spacer(Modifier.height(4.5.dp))
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                         verticalAlignment = Alignment.CenterVertically
@@ -89,31 +89,62 @@ fun RuleCard(
                             fontFamily = FontFamily.Monospace
                         )
                     }
-                    if (rule.keyword.isNotBlank()) {
-                        Spacer(Modifier.height(4.dp))
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "KWD",
-                                color = OnSurfaceMuted,
-                                fontSize = 9.sp,
-                                letterSpacing = 1.5.sp,
-                                fontWeight = FontWeight.Medium
-                            )
-                            Text(
-                                text = "\"${rule.keyword}\"",
-                                color = AmberWarning,
-                                fontSize = 12.sp,
-                                fontFamily = FontFamily.Monospace
-                            )
-                        }
+                    Spacer(Modifier.height(4.5.dp))
+                    val (kwdText, kwdColor) = when {
+                        rule.keyword.isBlank() -> "NOT SET" to RedInfo
+                        rule.keyword.length > 21 -> "\"${rule.keyword.take(21)} ...\"" to AmberWarning
+                        else -> "\"${rule.keyword}\"" to AmberWarning
                     }
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "KWD",
+                            color = OnSurfaceMuted,
+                            fontSize = 9.sp,
+                            letterSpacing = 1.5.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                        Text(
+                            text = kwdText,
+                            color = kwdColor,
+                            fontSize = 12.sp,
+                            fontFamily = FontFamily.Monospace
+                        )
+                    }
+                    Spacer(Modifier.height(4.5.dp))
+                    val (replyText, replyColor) = when {
+                        rule.default_text.isBlank() -> "NOT SET" to RedInfo
+                        rule.default_text.length > 21 -> rule.default_text.take(21) + "..." to AmberWarning
+                        else -> rule.default_text to AmberWarning
+                    }
+
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "REPLY WITH",
+                            color = OnSurfaceMuted,
+                            fontSize = 9.sp,
+                            letterSpacing = 1.5.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                        Text(
+                            text = replyText,
+                            color = replyColor,
+                            fontSize = 12.sp,
+                            fontFamily = FontFamily.Monospace
+                        )
+
+
+                    }
+
                 }
                 Column(
                     horizontalAlignment = Alignment.End,
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                    verticalArrangement = Arrangement.spacedBy(24.4.dp)
                 ) {
                     Switch(
                         checked = rule.enabled,

@@ -5,7 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.provider.Telephony
 import com.smsclaude.data.repository.SettingsRepository
-import com.smsclaude.service.SmsForwarderService
+import com.smsclaude.service.SmsClaudeService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -29,11 +29,11 @@ class SmsReceiver : BroadcastReceiver() {
                 if (settings.isUserStopped) return@launch
 
          
-                val serviceIntent = Intent(context, SmsForwarderService::class.java).apply {
-                    action = SmsForwarderService.ACTION_PROCESS_SMS
-                    putExtra(SmsForwarderService.EXTRA_SENDER,    sender)
-                    putExtra(SmsForwarderService.EXTRA_BODY,      body)
-                    putExtra(SmsForwarderService.EXTRA_TIMESTAMP, timestamp)
+                val serviceIntent = Intent(context, SmsClaudeService::class.java).apply {
+                    action = SmsClaudeService.ACTION_PROCESS_SMS
+                    putExtra(SmsClaudeService.EXTRA_SENDER,    sender)
+                    putExtra(SmsClaudeService.EXTRA_BODY,      body)
+                    putExtra(SmsClaudeService.EXTRA_TIMESTAMP, timestamp)
                 }
                 context.startForegroundService(serviceIntent)
             } finally {

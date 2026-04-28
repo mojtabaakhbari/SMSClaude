@@ -18,7 +18,7 @@ class BootReceiver : BroadcastReceiver() {
             val settings = SettingsRepository(context).getSettings()
             if (settings.startOnBoot && !settings.isUserStopped) {
                 context.startForegroundService(
-                    Intent(context, SmsForwarderService::class.java)
+                    Intent(context, SmsClaudeService::class.java)
                 )
             }
         }

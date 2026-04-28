@@ -18,7 +18,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.TextUnit
 import com.smsclaude.data.model.AppSettings
 import com.smsclaude.ui.components.*
 import com.smsclaude.ui.theme.*
@@ -26,12 +28,32 @@ import com.smsclaude.viewmodel.DashboardViewModel
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+
 
 @Composable
 fun DashboardScreen(viewModel: DashboardViewModel) {
+	LaunchedEffect(Unit) {
+		viewModel.checkTodayCount()
+	}
+	val lifecycleOwner = LocalLifecycleOwner.current
+
+	DisposableEffect(lifecycleOwner, viewModel) {
+		val observer = LifecycleEventObserver { _, event ->
+		    if (event == Lifecycle.Event.ON_RESUME) {
+		        viewModel.checkTodayCount()
+		    }
+		}
+		lifecycleOwner.lifecycle.addObserver(observer)
+		onDispose {
+		    lifecycleOwner.lifecycle.removeObserver(observer)
+		}
+	}
+
     val uiState by viewModel.uiState.collectAsState()
 
-  
     if (uiState.showClearActivityDialog) {
         AlertDialog(
             onDismissRequest = { viewModel.dismissClearActivityDialog() },
@@ -121,6 +143,7 @@ fun DashboardScreen(viewModel: DashboardViewModel) {
                         fontWeight = FontWeight.Medium,
                         fontFamily = FontFamily.Monospace
                     )
+                    Spacer(Modifier.height(6.dp))
                     Text(
                         text = "${uiState.recentActivity.size} / 50 entries",
                         color = OnSurfaceMuted,
@@ -222,9 +245,9 @@ private fun ServiceToggleCard(
                         fontFamily = FontFamily.Monospace
                     )
                 }
-                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(6.dp))
                 Text(
-                    text = if (isRunning) "Monitoring and forwarding incoming SMS"
+                    text = if (isRunning) "Monitoring and controlling incoming SMS"
                     else "Toggle to start SMS Claude",
                     color = OnSurfaceMuted,
                     fontSize = 12.sp
@@ -280,26 +303,43 @@ private fun ServiceToggleCard(
 
 @Composable
 private fun StatsRow(settings: AppSettings) {
+    val lastTimeValue =
+        if (settings.lastSentTimestamp > 0) {
+            DateTimeFormatter.ofPattern("yyyy/MM/dd\nHH:mm")
+                .withZone(ZoneId.systemDefault())
+                .format(Instant.ofEpochMilli(settings.lastSentTimestamp))
+        } else "—"
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(IntrinsicSize.Min),
         horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        StatCard("TODAY", settings.todayForwarded.toString(), modifier = Modifier.weight(1f))
-        StatCard("TOTAL", settings.totalForwarded.toString(), modifier = Modifier.weight(1f))
         StatCard(
-            label = "LAST",
-            value = if (settings.lastForwardedTimestamp > 0) {
-                DateTimeFormatter.ofPattern("HH:mm")
-                    .withZone(ZoneId.systemDefault())
-                    .format(Instant.ofEpochMilli(settings.lastForwardedTimestamp))
-            } else "—",
-            modifier = Modifier.weight(1f)
+            label = "TODAY",
+            value = settings.todaySent.toString(),
+            elem_space = 7.3.dp,
+            modifier = Modifier.weight(0.25f).fillMaxHeight()
+        )
+
+        StatCard(
+            label = "TOTAL",
+            value = settings.totalSent.toString(),
+            elem_space = 7.3.dp,
+            modifier = Modifier.weight(0.25f).fillMaxHeight()
+        )
+
+        StatCard(
+            label = "LAST TIME",
+            value = lastTimeValue,
+            f_size = if (lastTimeValue == "—") 18.sp else 12.sp,
+            modifier = Modifier.weight(0.5f).fillMaxHeight()
         )
     }
 }
 
 @Composable
-private fun StatCard(label: String, value: String, modifier: Modifier = Modifier) {
+private fun StatCard(label: String, value: String, elem_space: Dp = 6.dp, f_size: TextUnit = 18.sp, modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(4.dp))
@@ -316,11 +356,11 @@ private fun StatCard(label: String, value: String, modifier: Modifier = Modifier
                 fontWeight = FontWeight.Medium,
                 fontFamily = FontFamily.Monospace
             )
-            Spacer(Modifier.height(6.dp))
+            Spacer(Modifier.height(elem_space))
             Text(
                 text = value,
                 color = ElectricTeal,
-                fontSize = 18.sp,
+                fontSize = f_size,
                 fontWeight = FontWeight.Bold,
                 fontFamily = FontFamily.Monospace
             )

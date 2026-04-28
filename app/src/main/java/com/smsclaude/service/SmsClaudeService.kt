@@ -12,15 +12,15 @@ import androidx.core.app.NotificationCompat
 import androidx.lifecycle.LifecycleService
 import com.smsclaude.MainActivity
 import com.smsclaude.data.repository.SettingsRepository
-import com.smsclaude.engine.ForwardingEngine
+import com.smsclaude.engine.SendingEngine
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-class SmsForwarderService : LifecycleService() {
+class SmsClaudeService : LifecycleService() {
 
     companion object {
-        const val CHANNEL_ID        = "sms_forwarder_channel"
+        const val CHANNEL_ID        = "sms_claude_channel"
         const val NOTIFICATION_ID   = 1001
         const val ACTION_STOP       = "com.smsclaude.ACTION_STOP"
         const val ACTION_PROCESS_SMS = "com.smsclaude.ACTION_PROCESS_SMS"
@@ -58,7 +58,7 @@ class SmsForwarderService : LifecycleService() {
                 val timestamp = intent.getLongExtra(EXTRA_TIMESTAMP, System.currentTimeMillis())
 
                 CoroutineScope(Dispatchers.IO).launch {
-                    ForwardingEngine(applicationContext).process(sender, body, timestamp)
+                    SendingEngine(applicationContext).process(sender, body, timestamp)
                 }
             }
 
@@ -84,7 +84,7 @@ class SmsForwarderService : LifecycleService() {
     override fun onTaskRemoved(rootIntent: Intent?) {
         super.onTaskRemoved(rootIntent)
       
-        val restartIntent = Intent(applicationContext, SmsForwarderService::class.java)
+        val restartIntent = Intent(applicationContext, SmsClaudeService::class.java)
         val pendingIntent = PendingIntent.getService(
             applicationContext, 1, restartIntent,
             PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE
@@ -131,7 +131,7 @@ class SmsForwarderService : LifecycleService() {
             "SMS Claude Service",
             NotificationManager.IMPORTANCE_LOW
         ).apply {
-            description = "Keeps SMS forwarding active in background"
+            description = "Keeps SMS actions active in background"
             setShowBadge(false)
         }
         getSystemService(NotificationManager::class.java).createNotificationChannel(channel)

@@ -6,6 +6,8 @@ import androidx.lifecycle.viewModelScope
 import com.smsclaude.data.model.LogEntry
 import com.smsclaude.data.model.LogStatus
 import com.smsclaude.data.repository.LogRepository
+import com.smsclaude.data.repository.SettingsRepository
+import com.smsclaude.data.repository.ActivityRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -18,12 +20,14 @@ data class LogsUiState(
     val showClearDialog: Boolean = false
 )
 
-enum class LogFilter { ALL, FORWARDED, SKIPPED, FAILED }
+enum class LogFilter { ALL, FORWARDED, REPLIED, FAILED }
 
 class LogsViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val logRepo = LogRepository(application)
 
+    private val activityRepo = ActivityRepository(application)
+    private val settingsRepo = SettingsRepository(application)
+    private val logRepo = LogRepository(application, settingsRepo)
     private val _uiState = MutableStateFlow(LogsUiState())
     val uiState: StateFlow<LogsUiState> = _uiState.asStateFlow()
 
@@ -51,8 +55,8 @@ class LogsViewModel(application: Application) : AndroidViewModel(application) {
         return when (filter) {
             LogFilter.ALL -> logs
             LogFilter.FORWARDED -> logs.filter { it.status == LogStatus.FORWARDED }
-            LogFilter.SKIPPED -> logs.filter { it.status == LogStatus.SKIPPED }
-            LogFilter.FAILED -> logs.filter { it.status == LogStatus.FAILED }
+            LogFilter.REPLIED -> logs.filter { it.status == LogStatus.REPLIED }
+            LogFilter.FAILED -> logs.filter { it.status == LogStatus.FWD_FAILED || it.status == LogStatus.RPL_FAILED }
         }
     }
 
@@ -67,6 +71,8 @@ class LogsViewModel(application: Application) : AndroidViewModel(application) {
     fun clearLogs() {
         viewModelScope.launch {
             logRepo.clearLogs()
+            activityRepo.clearActivity()
+            settingsRepo.resetCount()
             _uiState.value = _uiState.value.copy(showClearDialog = false)
         }
     }

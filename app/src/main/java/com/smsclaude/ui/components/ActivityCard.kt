@@ -28,8 +28,9 @@ fun ActivityCard(activity: RecentActivity, modifier: Modifier = Modifier) {
 
     val (statusColor, statusText) = when (activity.status) {
         LogStatus.FORWARDED -> ElectricTeal to "FWD"
-        LogStatus.SKIPPED -> AmberWarning to "SKIP"
-        LogStatus.FAILED -> RedError to "FAIL"
+        LogStatus.REPLIED -> BlueInfo to "RPL"
+        LogStatus.RPL_FAILED -> RedError to "RPL FAIL"
+        LogStatus.FWD_FAILED -> RedError to "FWD FAIL"
     }
 
     Box(

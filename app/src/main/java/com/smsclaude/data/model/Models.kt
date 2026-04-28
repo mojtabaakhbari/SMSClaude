@@ -4,11 +4,12 @@ import kotlinx.serialization.Serializable
 import java.util.UUID
 
 @Serializable
-data class ForwardingRule(
+data class SmsRule(
     val id: String = UUID.randomUUID().toString(),
     val sources: List<String> = listOf("ANY"),
     val destinations: List<String>,
     val keyword: String = "",
+    val default_text: String = "",
     val enabled: Boolean = true
 )
 
@@ -32,18 +33,19 @@ data class RecentActivity(
 )
 
 @Serializable
-enum class LogStatus { FORWARDED, SKIPPED, FAILED }
+enum class LogStatus { FORWARDED, REPLIED, FWD_FAILED, RPL_FAILED }
 
 @Serializable
 data class AppSettings(
     val startOnBoot: Boolean = false,
-    val forwardDelay: Int = 0,
+    val sentDelay: Int = 0,
     val prefix: String = "",
     val suffix: String = "",
     val isUserStopped: Boolean = true,
     val isServiceRunning: Boolean = false,
-    val totalForwarded: Int = 0,
-    val todayForwarded: Int = 0,
-    val lastForwardedTimestamp: Long = 0L,
-    val lastForwardedDate: String = ""
+    val totalSent: Int = 0,
+    val todaySent: Int = 0,
+    val lastSentTimestamp: Long = 0L,
+    val lastSentDate: String = "",
+    val lastCheckTodayCountDate: String = ""
 )

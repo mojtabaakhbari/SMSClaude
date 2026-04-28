@@ -13,6 +13,7 @@ val OnSurface = Color(0xFFE8E8F0)
 val OnSurfaceMuted = Color(0xFF8888A0)
 val AmberWarning = Color(0xFFFFAA00)
 val RedError = Color(0xFFFF4466)
+val RedInfo = RedError
 val GreenSuccess = Color(0xFF00E5CC)
 val BlueInfo = Color(0xFF4488FF)
 val StatusGreen = Color(0xFF00FF88)

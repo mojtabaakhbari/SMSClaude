@@ -36,7 +36,7 @@ fun LogsScreen(viewModel: LogsViewModel = viewModel()) {
             title = { Text("Clear All Logs", color = OnSurface) },
             text = {
                 Text(
-                    "This will permanently delete all log entries. Continue?",
+                    "This will permanently delete all log entries and counts. Continue?",
                     color = OnSurfaceMuted
                 )
             },
@@ -82,8 +82,9 @@ fun LogsScreen(viewModel: LogsViewModel = viewModel()) {
                         letterSpacing = 3.sp,
                         fontFamily = FontFamily.Monospace
                     )
+                    Spacer(Modifier.height(6.dp))
                     Text(
-                        text = "${uiState.logs.size} entries",
+                        text = "${uiState.logs.size} ${if (uiState.logs.size == 1) "entry" else "entries"}",
                         color = OnSurfaceMuted,
                         fontSize = 12.sp
                     )

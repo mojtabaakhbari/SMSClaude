@@ -30,19 +30,19 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             val s = _settings.value
             settingsRepo.updateUserSettings(
                 startOnBoot = enabled,
-                forwardDelay = s.forwardDelay,
+                sentDelay = s.sentDelay,
                 prefix = s.prefix,
                 suffix = s.suffix
             )
         }
     }
 
-    fun setForwardDelay(delay: Int) {
+    fun setSendingDelay(delay: Int) {
         viewModelScope.launch {
             val s = _settings.value
             settingsRepo.updateUserSettings(
                 startOnBoot = s.startOnBoot,
-                forwardDelay = delay,
+                sentDelay = delay,
                 prefix = s.prefix,
                 suffix = s.suffix
             )
@@ -54,7 +54,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             val s = _settings.value
             settingsRepo.updateUserSettings(
                 startOnBoot = s.startOnBoot,
-                forwardDelay = s.forwardDelay,
+                sentDelay = s.sentDelay,
                 prefix = prefix,
                 suffix = s.suffix
             )
@@ -66,7 +66,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             val s = _settings.value
             settingsRepo.updateUserSettings(
                 startOnBoot = s.startOnBoot,
-                forwardDelay = s.forwardDelay,
+                sentDelay = s.sentDelay,
                 prefix = s.prefix,
                 suffix = suffix
             )

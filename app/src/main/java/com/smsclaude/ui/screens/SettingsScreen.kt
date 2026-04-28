@@ -65,6 +65,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
                 ) {
                     Column {
                         Text("Start on Boot", color = OnSurface, fontSize = 14.sp)
+                        Spacer(Modifier.height(6.dp))
                         Text(
                             "Auto-start when device reboots",
                             color = OnSurfaceMuted,
@@ -93,32 +94,35 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("Forward Delay", color = OnSurface, fontSize = 14.sp)
+                        Text("Sending Delay", color = OnSurface, fontSize = 14.sp)
                         Text(
-                            "${settings.forwardDelay}s",
+                            "${settings.sentDelay}s",
                             color = ElectricTeal,
                             fontSize = 14.sp,
                             fontFamily = FontFamily.Monospace,
                             fontWeight = FontWeight.Bold
                         )
                     }
+                    Spacer(Modifier.height(6.dp))
                     Text(
-                        "Delay before forwarding each SMS",
+                        "Delay before sending each SMS",
                         color = OnSurfaceMuted,
                         fontSize = 11.sp
                     )
                     Spacer(Modifier.height(8.dp))
                     Slider(
-                        value = settings.forwardDelay.toFloat(),
-                        onValueChange = { viewModel.setForwardDelay(it.toInt()) },
+                        value = settings.sentDelay.toFloat(),
+                        onValueChange = { viewModel.setSendingDelay(it.toInt()) },
                         valueRange = 0f..60f,
                         steps = 59,
+                        modifier = Modifier.height(30.dp),
                         colors = SliderDefaults.colors(
                             thumbColor = ElectricTeal,
                             activeTrackColor = ElectricTeal,
                             inactiveTrackColor = BorderColor
                         )
                     )
+                    Spacer(Modifier.height(6.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
@@ -191,9 +195,9 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
         item {
             SettingsCard {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    AboutRow("Version", "1.0.0")
+                    AboutRow("Version", "1.1.0")
                     HorizontalDivider(color = BorderColor)
-                    AboutRow("Author", "Mojtaba Akhbari")
+                    AboutRow("Author", "[Mojtaba Akhbari]")
                     HorizontalDivider(color = BorderColor)
                     AboutRow("GitHub", "github.com/mojtabaakhbari", isLink = true)
                 }

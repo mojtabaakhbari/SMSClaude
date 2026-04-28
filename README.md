@@ -62,10 +62,10 @@
 ├── 📂 data/
 │   ├── 📄 model/          ForwardingRule, LogEntry, RecentActivity, AppSettings
 │   └── 📄 repository/     DataStore-backed repositories
-├── ⚙️ engine/             ForwardingEngine.kt — SMS matching & sending logic
+├── ⚙️ engine/             SendingEngine.kt — SMS matching & sending logic
 ├── 🔐 permission/         PermissionManager.kt — runtime permission checks
 ├── 📡 receiver/           SmsReceiver.kt — BroadcastReceiver for incoming SMS
-├── 🔄 service/            SmsForwarderService.kt, BootReceiver.kt
+├── 🔄 service/            SmsClaudeService.kt, BootReceiver.kt
 ├── 🎨 ui/
 │   ├── 🧩 components/     PulsingDot, StatusBar, ActivityCard, RuleCard
 │   ├── 📱 screens/        Dashboard, Rules, Logs, Settings
@@ -104,7 +104,7 @@
 ### 📨 SMS Forwarding Flow
 
 ```
-📡 SmsReceiver → ⚙️ ForwardingEngine.process()
+📡 SmsReceiver → ⚙️ SendingEngine.process()
   → 📂 Load rules from DataStore
   → 🎯 Match sender + keyword patterns
   → ⏱️ Apply delay (if configured)
@@ -164,6 +164,8 @@
 - 💾 DataStore handles all persistence - no Room/SQLite dependency
 - 📊 Auto-trimming: Max 500 log entries, max 50 activity entries (oldest removed first)
 - 🔒 All data stored locally - no network calls or external dependencies
+- 🔄 Service renamed from `SmsForwarderService` to `SmsClaudeService` for better branding
+- ⚙️ Engine refactored from `ForwardingEngine` to `SendingEngine` with improved SMS processing logic
 
 ---
 

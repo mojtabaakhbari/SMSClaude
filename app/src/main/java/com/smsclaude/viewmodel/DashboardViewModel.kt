@@ -8,8 +8,9 @@ import com.smsclaude.data.model.AppSettings
 import com.smsclaude.data.model.RecentActivity
 import com.smsclaude.data.repository.ActivityRepository
 import com.smsclaude.data.repository.SettingsRepository
+import com.smsclaude.data.repository.LogRepository
 import com.smsclaude.permission.PermissionManager
-import com.smsclaude.service.SmsForwarderService
+import com.smsclaude.service.SmsClaudeService
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -28,6 +29,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     private val settingsRepo    = SettingsRepository(application)
     private val activityRepo    = ActivityRepository(application)
+    private val logRepo        = LogRepository(application, settingsRepo)
     private val permissionManager = PermissionManager(application)
 
     private val _uiState = MutableStateFlow(DashboardUiState())
@@ -41,6 +43,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         viewModelScope.launch {
             val initial = settingsRepo.getSettings()
             _serviceRunning.value = initial.isServiceRunning
+            logRepo.checkTodayCount()
         }
 
 
@@ -65,7 +68,6 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
-    /** Called from MainActivity every time the app resumes */
     fun refreshPermissionState() {
         _uiState.value = _uiState.value.copy(
             canStartService = permissionManager.canStartService()
@@ -80,7 +82,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         _serviceRunning.value = true
 
         context.startForegroundService(
-            Intent(context, SmsForwarderService::class.java)
+            Intent(context, SmsClaudeService::class.java)
         )
         viewModelScope.launch {
             settingsRepo.setUserStopped(false)
@@ -95,8 +97,8 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         _serviceRunning.value = false
 
         context.startService(
-            Intent(context, SmsForwarderService::class.java).apply {
-                action = SmsForwarderService.ACTION_STOP
+            Intent(context, SmsClaudeService::class.java).apply {
+                action = SmsClaudeService.ACTION_STOP
             }
         )
         viewModelScope.launch {
@@ -119,4 +121,11 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             _uiState.value = _uiState.value.copy(showClearActivityDialog = false)
         }
     }
+	
+	fun checkTodayCount() {
+		viewModelScope.launch {
+		    logRepo.checkTodayCount()
+	}
+}
+
 }

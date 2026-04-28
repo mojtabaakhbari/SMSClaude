@@ -41,7 +41,7 @@
         </receiver>
 
         <service
-            android:name=".service.SmsForwarderService"
+            android:name=".service.SmsClaudeService"
             android:foregroundServiceType="dataSync"
             android:stopWithTask="false"
             android:exported="false"/>

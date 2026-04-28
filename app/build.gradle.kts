@@ -11,7 +11,7 @@ android {
 
     signingConfigs {
         create("release") {
-            storeFile = file("smsforwarder-release.keystore")
+            storeFile = file("smsclaude-release.keystore")
             storePassword = "smsforwarder123"
             keyAlias = "smsforwarder"
             keyPassword = "smsforwarder123"
@@ -23,7 +23,7 @@ android {
         minSdk = 26
         targetSdk = 35
         versionCode = 1
-        versionName = "1.0.0"
+        versionName = "1.1.0"
     }
 
     buildTypes {
