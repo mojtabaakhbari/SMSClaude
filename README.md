@@ -1,6 +1,6 @@
-# 📱 SMSClaude — Smart SMS Forwarder
+# 📱 SMSClaude — Smart SMS Forwarder & Auto-Responder
 
-> **Intelligent SMS forwarding made simple** - A powerful native Android app that automatically forwards your SMS messages based on customizable rules with a sleek dark interface.
+> **Intelligent SMS handling made simple** - A powerful native Android app that automatically forwards and replies to your SMS messages based on customizable rules with a sleek dark interface.
 
 ![Android](https://img.shields.io/badge/Android-8.0%2B-green?logo=android)
 ![Kotlin](https://img.shields.io/badge/Kotlin-1.9%2B-blue?logo=kotlin)
@@ -12,10 +12,11 @@
 ## ✨ Key Features
 
 🚀 **Smart Forwarding** - Create custom rules with sender filters and keyword matching  
+💬 **Auto-Reply** - Send automated replies with customizable message templates  
 🎨 **Beautiful UI** - Dark industrial theme with Material 3 and smooth animations  
 🔋 **Battery Optimized** - Foreground service with intelligent power management  
 🔐 **Secure & Private** - All data stored locally with DataStore persistence  
-📊 **Real-time Monitoring** - Live activity feed and detailed forwarding logs  
+📊 **Real-time Monitoring** - Live activity feed and detailed SMS handling logs  
 ⚡ **Auto-restart** - Survives system kills and device reboots  
 🎯 **Rule Validation** - Real-time regex validation and error prevention  
 📱 **Modern Architecture** - MVVM with Jetpack Compose and Coroutines
@@ -84,10 +85,11 @@
 | **🚀 Boot Start**       | Automatic startup on device boot with user preference respect            |
 | **🔐 Permission Gate**  | Comprehensive permission checks with non-dismissible dialogs             |
 | **📊 Real-time Feed**   | StateFlow-driven activity feed with smooth card animations               |
+| **💬 Auto-Reply Logic** | Conditional replies based on rule templates vs. original message forward |
 | **🎨 Custom Toasts**    | Animated pill toasts with queue management and progress indicators       |
 | **✅ Rule Validation**  | Real-time regex validation with disabled save until valid                |
 | **⏰ Timestamps**       | Beautiful `dd MMM · HH:mm:ss` format on every activity card              |
-| **🔍 Log Filtering**    | Filter by ALL / FORWARDED / SKIPPED / FAILED statuses                    |
+| **🔍 Log Filtering**    | Filter by ALL / FORWARDED / REPLIED / FAILED statuses                    |
 | **🗑️ Clear Dialogs**    | Confirmation dialogs for clearing logs and activity history              |
 | **🌙 Dark UI**          | `#0f0f14` background with `#00e5cc` teal accent and monospace fonts      |
 
@@ -101,13 +103,16 @@
 - System kills → `START_STICKY` restarts → checks user stop flag
 - Task removal → `AlarmManager` reschedules restart in 500ms
 
-### 📨 SMS Forwarding Flow
+### 📨 SMS Handling Flow
 
 ```
 📡 SmsReceiver → ⚙️ SendingEngine.process()
   → 📂 Load rules from DataStore
   → 🎯 Match sender + keyword patterns
   → ⏱️ Apply delay (if configured)
+  → 💬 Check: Reply template set?
+    ✅ Yes → Send custom reply (LogStatus.REPLIED)
+    ❌ No → Forward original message (LogStatus.FORWARDED)
   → 📤 SmsManager.sendTextMessage()
   → 📝 Write to LogRepository + ActivityRepository
   → 📈 Increment stats in SettingsRepository
@@ -127,9 +132,9 @@
 ## 📱 App Screens
 
 1. **🏠 Dashboard** - Service toggle with pulsing dot, statistics (today/total/last), live activity feed
-2. **📋 Rules** - Create/manage forwarding rules with ModalBottomSheet and real-time validation
-3. **📜 Logs** - Complete event log with status filter chips and clear confirmation
-4. **⚙️ Settings** - Boot toggle, forwarding delay slider (0–60s), prefix/suffix, about section
+2. **📋 Rules** - Create/manage forwarding & reply rules with ModalBottomSheet and real-time validation
+3. **📜 Logs** - Complete event log with FORWARDED/REPLIED/FAILED status filters and clear confirmation
+4. **⚙️ Settings** - Boot toggle, SMS handling delay slider (0–60s), prefix/suffix, about section
 
 ---
 
@@ -140,8 +145,11 @@
 1. ✅ Grant all permissions when prompted
 2. 🔋 Disable battery optimization for the app
 3. 📝 Create test rule: Sources = `ANY`, Destination = your second phone number
-4. 🎯 Toggle service ON
-5. 📨 Send an SMS to the device - it will be forwarded automatically
+4. 💬 **Reply Test**: Add "Reply Message" like "I'm busy, will reply later"
+5. 🎯 Toggle service ON
+6. 📨 Send an SMS to the device:
+   - **No reply template** → Original message forwarded
+   - **With reply template** → Custom reply sent instead
 
 ---
 
@@ -166,6 +174,8 @@
 - 🔒 All data stored locally - no network calls or external dependencies
 - 🔄 Service renamed from `SmsForwarderService` to `SmsClaudeService` for better branding
 - ⚙️ Engine refactored from `ForwardingEngine` to `SendingEngine` with improved SMS processing logic
+- 💬 Reply functionality: Rules can send custom replies instead of forwarding original messages
+- 📝 LogStatus enum includes REPLIED and RPL_FAILED for reply tracking
 
 ---
 
